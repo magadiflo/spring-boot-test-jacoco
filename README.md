@@ -7,6 +7,10 @@ Guzmán**, mismo que está alojado en el siguiente repositorio
 Sobre el tema de `JaCoCo` que se aborda en este proyecto y los distintos ejemplos, es fruto de la investigación
 que hice sobre el tema.
 
+**Fuente**
+
+- [JaCoCo Code Coverage with Spring Boot (Truong Bui - medium)](https://medium.com/@truongbui95/jacoco-code-coverage-with-spring-boot-835af8debc68)
+
 ---
 
 ## Dependencias iniciales
@@ -90,3 +94,26 @@ A continuación se muestra todo el archivo `pom.xml` con el que está construido
 
 </project>
 ````
+
+## ¿Qué es JaCoCo?
+
+Estoy bastante seguro de que cada uno de nosotros ha escrito y seguirá escribiendo `pruebas unitarias` en sus proyectos.
+Las `pruebas unitarias` desempeñan un papel muy importante, ya que las empleamos para probar cada fragmento de código,
+función, método y más.
+
+Una vez finalizada la redacción de las `pruebas unitarias`, es esencial ver cuánto cubrieron el código las pruebas e
+identificar áreas que requieren pruebas adicionales. Hacemos todo esto para asegurarnos de que el código de la
+aplicación esté completamente probado y listo para su implementación.
+
+`JaCoCo (Java Code Coverage)` es una herramienta que se utiliza para medir la cobertura de código en proyectos Java. La
+cobertura de código es una métrica que indica qué partes de tu código han sido ejecutadas durante las pruebas
+automatizadas. `JaCoCo` te ayuda a identificar áreas no cubiertas por pruebas, lo que puede ser crucial para mejorar la
+calidad y la robustez del software.
+
+## Características de JaCoCo
+
+- Realizar análisis de cobertura de instrucciones, ramas, líneas, métodos y complejidad ciclomática del código.
+- Integración simple por medio de agente de java.
+- Compatible con todas las versiones de archivos de clase Java publicadas.
+- Se puede user para tareas en Ant y Maven.
+
