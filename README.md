@@ -117,3 +117,71 @@ calidad y la robustez del software.
 - Compatible con todas las versiones de archivos de clase Java publicadas.
 - Se puede user para tareas en Ant y Maven.
 
+## Agrega plugin de JaCoCo
+
+Necesitamos definir el plugin `Maven` de `JaCoCo` en el archivo `pom.xml`.
+
+````xml
+
+<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.12</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>prepare-agent</goal>
+            </goals>
+        </execution>
+        <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+                <goal>report</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+````
+
+**DONDE**
+
+- `<executions>`, esta sección define las diferentes ejecuciones del plugin que se van a realizar en diferentes fases
+  del `ciclo de vida de Maven`. Cada ejecución puede tener uno o más objetivos `(goals)` que especifican las tareas que
+  debe realizar el plugin.
+
+
+- `<execution>`, define una ejecución específica del plugin. En este caso, hay dos ejecuciones diferentes: una para
+  `preparar el agente de cobertura` y otra para `generar el reporte`.
+
+
+- `<goals>`, dentro de cada ejecución, se define una o más objetivos `(goals)` que se deben realizar. Un objetivo es una
+  acción que el plugin lleva a cabo durante la ejecución.
+
+
+- `<goal>prepare-agent</goal>`, este objetivo `(prepare-agent)` prepara el agente de `JaCoCo` para recopilar datos de
+  cobertura durante la ejecución de las pruebas. Básicamente, `JaCoCo` instrumenta el código para rastrear qué líneas y
+  ramas del código se ejecutan.
+
+
+- `<id>report</id>`, asigna un identificador único (id) a esta ejecución específica del plugin. Aquí, la ejecución se
+  denomina `report`, ya que se encarga de generar el informe de cobertura.
+
+
+- `<phase>test</phase>`, especifica la `fase del ciclo de vida de Maven` en la que se ejecutará esta configuración. La
+  fase `test` es donde se ejecutan las `pruebas unitarias`. Aquí, la generación del informe de cobertura se realiza
+  justo después de que se ejecutan las pruebas.
+
+
+- `<goal>report</goal>`, este objetivo `(report)` genera un informe de cobertura de código utilizando los datos
+  recopilados por el agente. El informe se generará en la carpeta `target/site/jacoco`.
+
+**Resumen**
+
+- `Primera ejecución (prepare-agent)`: Se encarga de preparar el agente de `JaCoCo` antes de la ejecución de las pruebas
+  para que pueda recopilar datos de cobertura.
+- `Segunda ejecución (report)`: Después de que se ejecutan las pruebas en la fase test, esta ejecución genera un informe
+  detallado de la cobertura de código.
+
+Esta configuración es básica pero suficiente para integrar `JaCoCo` en un proyecto de `Spring Boot` y generar informes
+de cobertura después de ejecutar las pruebas automatizadas.
