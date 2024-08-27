@@ -25,8 +25,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
@@ -154,5 +153,35 @@ class AccountControllerTest {
         LocalDateTime localDateTime = LocalDateTime.parse(dateTime);
 
         assertEquals(LocalDate.now(), localDateTime.toLocalDate());
+    }
+
+    @Test
+    void shouldDeleteAnAccountById() throws Exception {
+        // given
+        Long accountToDeleteId = 1L;
+        when(this.accountService.deleteAccountById(accountToDeleteId)).thenReturn(Optional.of(true));
+
+        // when
+        ResultActions response = this.mockMvc.perform(delete("/api/v1/accounts/{accountId}", accountToDeleteId));
+
+        // then
+        response.andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+        verify(this.accountService).deleteAccountById(accountToDeleteId);
+        verify(this.accountService).deleteAccountById(anyLong());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenAnAccountDoesNotExist() throws Exception {
+        // given
+        when(this.accountService.deleteAccountById(anyLong())).thenReturn(Optional.empty());
+
+        // when
+        ResultActions response = this.mockMvc.perform(delete("/api/v1/accounts/{accountId}", 1));
+
+        // then
+        response.andExpect(status().isNotFound())
+                .andExpect(content().string(""));
+        verify(this.accountService).deleteAccountById(anyLong());
     }
 }

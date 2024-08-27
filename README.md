@@ -10,6 +10,7 @@ que hice sobre el tema.
 **Fuente**
 
 - [JaCoCo Code Coverage with Spring Boot (Truong Bui - medium)](https://medium.com/@truongbui95/jacoco-code-coverage-with-spring-boot-835af8debc68)
+- [Intro to JaCoCo (Baeldung)](https://www.baeldung.com/jacoco)
 
 ---
 
@@ -225,8 +226,18 @@ Ahora, para ver el reporte, abrimos el archivo `target/site/jacoco/index.html` e
 ![03.png](assets/03.png)
 
 En la imagen se puede ver que `sping-boot-test-jacoco` es el nombre del proyecto y `dev.magadiflo.app` es el paquete.
-Se muestra que el código se ha cubierto en un `80%` y las ramas en un `64%`. Para obtener más detalles sobre las
-propiedades de Jacoco, puede consultar este recurso: Contadores de cobertura.
+Se muestra que el código se ha cubierto en un `80%` y las ramas en un `64%`. 
+
+La estructura del reporte:
+- `Element`: elemento a cubrir
+- `Missed Instructions`: Instrucciones perdidas, no cubiertas por el test.
+- `Cov`: Porcentaje de cobertura en los test.
+- `Missed branches`: Dentro del código se verifican todos los caminos posibles de la lógica implementada en código.
+- `Missed`: lineas de código no cubiertas por el test en la clase o método.
+- `Cxty`: Complejidad ciclomática del código.
+- `Lines`: Lineas de código cubiertas por el test.
+- `Methods`: Métodos cubiertos por el test.
+- `Classes`: Clases cubiertas por el test.
 
 Abra el paquete `dev.magadiflo.app.service.impl`, tenemos una clase `AccountServiceImpl`. En su interior, el código se
 ha cubierto en un `81%` y sin ramas que evaluar.
@@ -399,25 +410,128 @@ Si accedemos dentro del paquete anterior, podemos observar que se está tomando 
 ![12.png](assets/12.png)
 
 Entonces, para evitar que estas clases irrelevantes afecten a la cobertura del código, podemos excluirlas
-utilizando el plugin `Jacoco`. Para eso, en el `pom.xml` agregaremos la etiqueta `<configuration>` y dentro de él, 
-en una etiqueta `<exclude>` la clase compilada en `bytecode`.
+utilizando el plugin `Jacoco`. Para eso, en el `pom.xml`, dentro del plugin de `jacoco`, agregaremos la etiqueta
+`<configuration>` y dentro de él, en una etiqueta `<exclude>` la clase compilada en `bytecode`.
 
 ````xml
 
-<plugin>
-    <groupId>org.jacoco</groupId>
-    <artifactId>jacoco-maven-plugin</artifactId>
-    <version>0.8.12</version>
-    <configuration>
-        <excludes>
-            <exclude>dev/magadiflo/app/SpringBootTestApplication.class</exclude>
-        </excludes>
-    </configuration>
-    ...
-</plugin>
+<configuration>
+    <excludes>
+        <exclude>dev/magadiflo/app/SpringBootTestApplication.class</exclude>
+    </excludes>
+</configuration>
 ````
 
 A continuación procedemos a ejecutar los test con el comando `mvn clean test`, revisamos el reporte y observamos que ya
 no está el paquete `dev.magadiflo.app`. Recordemos que dentro de dicho paquete está la clase que acabamos de excluir.
 
 ![13.png](assets/13.png)
+
+## Ajustando límite de cobertura permitida
+
+Ahora digamos que estamos usando CI/CD para implementar el código, probablemente nos gustaría verificar qué porcentaje
+de líneas de código o porcentaje de cobertura de código se ha realizado, etc. Para hacer eso, necesitamos agregar un
+`execution` más dentro del plugin de `Jacoco`.
+
+````xml
+
+<execution>
+    <id>check</id>
+    <goals>
+        <goal>check</goal>
+    </goals>
+    <configuration>
+        <rules>
+            <rule>
+                <element>PACKAGE</element>
+                <limits>
+                    <limit>
+                        <counter>LINE</counter>
+                        <value>COVEREDRATIO</value>
+                        <minimum>0.90</minimum>
+                    </limit>
+                </limits>
+            </rule>
+        </rules>
+    </configuration>
+</execution>
+````
+
+En esta `execution`, agregamos una regla. La regla es que para el `PACKAGE`, el recuento debe ser `LINE` y la cobertura
+mínima de `LINE` debe ser del `90%`.
+
+Si observamos la siguiente imagen, veremos que los paquetes `dev.magadiflo.app.model.entity` y el
+`dev.magadiflo.app.controller` no está cumpliendo la regla mínima del `90%` de cobertura.
+
+![13.png](assets/13.png)
+
+Podemos ejecutar el siguiente comando para verificar si nuestros paquetes están cumpliendo con la cobertura
+mínima establecida. Obviamente, viendo la imagen anterior, es fácil deducir que hay dos paquetes que no están cumpliendo
+con la cobertura mínima, pero a continuación se muestra otra manera de poder verificar la cobertura.
+
+````bash
+$ mvn clean verify
+````
+
+Como se observa el resultado en consola, podemos ver el mensaje: Regla violada para el paquete
+`dev.magadiflo.app.controller`: la proporción de líneas cubiertas es `0,83`, pero el mínimo esperado es `0.9`.
+
+![14.png](assets/14.png)
+
+Así, que para pasar la cobertura mínima vamos a terminar de implementar los test que faltan del controlador.
+
+````java
+
+@WebMvcTest(AccountController.class)
+class AccountControllerTest {
+
+    /* other methods */
+
+    @Test
+    void shouldDeleteAnAccountById() throws Exception {
+        // given
+        Long accountToDeleteId = 1L;
+        when(this.accountService.deleteAccountById(accountToDeleteId)).thenReturn(Optional.of(true));
+
+        // when
+        ResultActions response = this.mockMvc.perform(delete("/api/v1/accounts/{accountId}", accountToDeleteId));
+
+        // then
+        response.andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+        verify(this.accountService).deleteAccountById(accountToDeleteId);
+        verify(this.accountService).deleteAccountById(anyLong());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenAnAccountDoesNotExist() throws Exception {
+        // given
+        when(this.accountService.deleteAccountById(anyLong())).thenReturn(Optional.empty());
+
+        // when
+        ResultActions response = this.mockMvc.perform(delete("/api/v1/accounts/{accountId}", 1));
+
+        // then
+        response.andExpect(status().isNotFound())
+                .andExpect(content().string(""));
+        verify(this.accountService).deleteAccountById(anyLong());
+    }
+}
+````
+
+Si le damos a `mvn clean test`, claramente vemos que el paquete `dev.magadiflo.app.controller` que contiene la clase
+`AccountController` ya se encuentra al `100%` de la cobertura.
+
+![15.png](assets/15.png)
+
+Vamos a ejecutar el comando `mvn clean verify` para ver si esta vez todos nuestros test pasan la cobertura mínima.
+
+![16.png](assets/16.png)
+
+En la imagen anterior vemos como es que los test pasan la verificación de la cobertura mínima `90%`.
+
+**NOTA**
+> Tengo una duda, dado que el paquete `dev.magadiflo.app.model.entity` tiene la cobertura del `72%`, eso significa que
+> debería lanzar el `warning` de que estamos violando la regla definida para los paquetes, pero no es así, el comando
+> `mvn clean verify` está pasando sin problemas. Ahora, algo que podría estar pasando es que la cobertura global
+> que es del `93%` estaría influyendo en que no se lance el `warning`.
