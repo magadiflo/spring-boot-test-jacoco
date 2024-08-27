@@ -18,25 +18,23 @@ import java.util.Optional;
 @Slf4j
 @RequiredArgsConstructor
 @Service
+@Transactional(readOnly = true)
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
     private final BankRepository bankRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public List<Account> findAll() {
         return this.accountRepository.findAll();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Optional<Account> findById(Long id) {
         return this.accountRepository.findById(id);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public BigDecimal reviewBalance(Long accountId) {
         return this.accountRepository.findById(accountId)
                 .map(Account::getBalance)
@@ -44,7 +42,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public int reviewTotalTransfers(Long bankId) {
         return this.bankRepository.findById(bankId)
                 .map(Bank::getTotalTransfers)
