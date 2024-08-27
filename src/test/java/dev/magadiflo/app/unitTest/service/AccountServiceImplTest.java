@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -262,5 +263,76 @@ class AccountServiceImplTest {
         assertEquals("No existe el banco con el id 1", exception.getMessage());
         verify(this.bankRepository).findById(1L);
         verify(this.bankRepository, times(1)).findById(anyLong());
+    }
+
+    @Test
+    void shouldFindAllAccounts() {
+        // given
+        List<Account> accounts = List.of(this.sourceAccount, this.targetAccount);
+        when(this.accountRepository.findAll()).thenReturn(accounts);
+
+        // when
+        List<Account> accountList = this.accountService.findAll();
+
+        // then
+        assertFalse(accountList.isEmpty());
+        assertEquals(accounts.size(), accountList.size());
+        verify(this.accountRepository).findAll();
+    }
+
+    @Test
+    void shouldSaveAnAccount() {
+        // given
+        Account accountToSave = Account.builder()
+                .person("Milagros")
+                .balance(new BigDecimal("2500"))
+                .build();
+        when(this.accountRepository.save(any(Account.class))).then(invocation -> {
+            Account account = invocation.getArgument(0);
+            account.setId(1L);
+            return account;
+        });
+
+        // when
+        Account accountDB = this.accountService.save(accountToSave);
+
+        // then
+        assertNotNull(accountDB);
+        assertNotNull(accountDB.getId());
+        assertEquals(1L, accountDB.getId());
+        assertEquals(accountToSave.getPerson(), accountDB.getPerson());
+        assertEquals(accountToSave.getBalance().doubleValue(), accountDB.getBalance().doubleValue());
+        verify(this.accountRepository).save(any(Account.class));
+    }
+
+    @Test
+    void shouldDeleteAnAccount() {
+        // given
+        Long accountToDeleteId = 1L;
+        when(this.accountRepository.findById(accountToDeleteId)).thenReturn(Optional.of(this.sourceAccount));
+        when(this.accountRepository.deleteAccountById(accountToDeleteId)).thenReturn(1);
+
+        // when
+        Optional<Boolean> wasDeleted = this.accountService.deleteAccountById(accountToDeleteId);
+
+        // then
+        assertTrue(wasDeleted.isPresent());
+        verify(this.accountRepository).findById(accountToDeleteId);
+        verify(this.accountRepository).deleteAccountById(accountToDeleteId);
+    }
+
+    @Test
+    void shouldReturnOptionalEmptyWhenDeleteAnAccountThatDoesNotExit() {
+        // given
+        Long accountToDeleteId = 1L;
+        when(this.accountRepository.findById(accountToDeleteId)).thenReturn(Optional.empty());
+
+        // when
+        Optional<Boolean> wasDeleted = this.accountService.deleteAccountById(accountToDeleteId);
+
+        // then
+        assertTrue(wasDeleted.isEmpty());
+        verify(this.accountRepository).findById(accountToDeleteId);
+        verify(this.accountRepository, never()).deleteAccountById(anyLong());
     }
 }

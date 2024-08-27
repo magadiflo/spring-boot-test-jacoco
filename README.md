@@ -271,3 +271,113 @@ Para tomar un ejemplo trivial, si no hay instrucciones `if` o `switch` en el có
 En general, la `complejidad ciclomática` refleja la `cantidad de casos de prueba` que necesitamos implementar para
 cubrir todo el código.
 
+## Puntuación de cobertura de código
+
+Ahora que sabemos un poco sobre cómo funciona `JaCoCo`, mejoremos nuestra puntuación de cobertura de código.
+
+Para lograr una cobertura de código del `100%`, necesitamos introducir pruebas que cubran las partes faltantes que se
+muestran en el informe inicial. Solo vamos a trabajar con la clase `AccountServiceImpl` para lograr el `100%` de la
+cobertura de código de dicha clase. Entonces, si revisamos el resultado anterior de la clase `AccountServiceImpl`, nos
+habremos dado cuenta de que hubo 3 métodos a los que no se les hizo su test, por lo tanto, a continuación procedemos
+a subsanar dicho inconveniente.
+
+````java
+
+@ExtendWith(MockitoExtension.class)
+class AccountServiceImplTest {
+
+    /* other codes: properties, test methods */
+
+    @Test
+    void shouldFindAllAccounts() {
+        // given
+        List<Account> accounts = List.of(this.sourceAccount, this.targetAccount);
+        when(this.accountRepository.findAll()).thenReturn(accounts);
+
+        // when
+        List<Account> accountList = this.accountService.findAll();
+
+        // then
+        assertFalse(accountList.isEmpty());
+        assertEquals(accounts.size(), accountList.size());
+        verify(this.accountRepository).findAll();
+    }
+
+    @Test
+    void shouldSaveAnAccount() {
+        // given
+        Account accountToSave = Account.builder()
+                .person("Milagros")
+                .balance(new BigDecimal("2500"))
+                .build();
+        when(this.accountRepository.save(any(Account.class))).then(invocation -> {
+            Account account = invocation.getArgument(0);
+            account.setId(1L);
+            return account;
+        });
+
+        // when
+        Account accountDB = this.accountService.save(accountToSave);
+
+        // then
+        assertNotNull(accountDB);
+        assertNotNull(accountDB.getId());
+        assertEquals(1L, accountDB.getId());
+        assertEquals(accountToSave.getPerson(), accountDB.getPerson());
+        assertEquals(accountToSave.getBalance().doubleValue(), accountDB.getBalance().doubleValue());
+        verify(this.accountRepository).save(any(Account.class));
+    }
+
+    @Test
+    void shouldDeleteAnAccount() {
+        // given
+        Long accountToDeleteId = 1L;
+        when(this.accountRepository.findById(accountToDeleteId)).thenReturn(Optional.of(this.sourceAccount));
+        when(this.accountRepository.deleteAccountById(accountToDeleteId)).thenReturn(1);
+
+        // when
+        Optional<Boolean> wasDeleted = this.accountService.deleteAccountById(accountToDeleteId);
+
+        // then
+        assertTrue(wasDeleted.isPresent());
+        verify(this.accountRepository).findById(accountToDeleteId);
+        verify(this.accountRepository).deleteAccountById(accountToDeleteId);
+    }
+
+    @Test
+    void shouldReturnOptionalEmptyWhenDeleteAnAccountThatDoesNotExit() {
+        // given
+        Long accountToDeleteId = 1L;
+        when(this.accountRepository.findById(accountToDeleteId)).thenReturn(Optional.empty());
+
+        // when
+        Optional<Boolean> wasDeleted = this.accountService.deleteAccountById(accountToDeleteId);
+
+        // then
+        assertTrue(wasDeleted.isEmpty());
+        verify(this.accountRepository).findById(accountToDeleteId);
+        verify(this.accountRepository, never()).deleteAccountById(anyLong());
+    }
+}
+````
+
+Con respecto al método `deleteAccountById()`, se ha creado dos métodos test para evaluar dos posibles escenarios, la
+primera cuando la cuenta sí existe y la segunda cuando no existe.
+
+Ahora, procedemos a ejecutar nuestros test con el comando de maven `mvn clean test`.
+
+![07.png](assets/07.png)
+
+Finalmente, revisamos la cobertura de prueba para la clase `AccountServiceImpl`. Nos podemos dar cuenta que ahora sí
+estamos cumpliendo el `100%` de la cobertura de código.
+
+![08.png](assets/08.png)
+
+Si ingresamos dentro de la clase veremos que todos los métodos están cumpliendo el `100%`.
+
+![09.png](assets/09.png)
+
+Incluso, si ingresamos dentro de uno de los métodos, podremos ver todos ellos que están con el fondo verde, lo que nos
+indica que estamos cubriendo el 100% de la cobertura de código para esta clase.
+
+![10.png](assets/10.png)
