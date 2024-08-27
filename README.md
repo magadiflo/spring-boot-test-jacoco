@@ -381,3 +381,43 @@ Incluso, si ingresamos dentro de uno de los métodos, podremos ver todos ellos q
 indica que estamos cubriendo el 100% de la cobertura de código para esta clase.
 
 ![10.png](assets/10.png)
+
+## Excluye clases de la cobertura de código
+
+Es posible que observe que la clase `SpringBootTestApplication` (clase principal de la aplicación) no es muy crítica
+para los informes de cobertura. En algunos casos, la cobertura de estas clases puede sesgar el informe general de
+cobertura de código.
+
+En la siguiente imagen, vemos que efectivamente, el paquete `dev.magadiflo.app` se está tomando como parte de la
+cobertura de código, aunque en realidad lo que se está tomando es el contenido dentro de ese paquete.
+
+![11.png](assets/11.png)
+
+Si accedemos dentro del paquete anterior, podemos observar que se está tomando la clase principal de la aplicación
+`SpringBootTestApplication` como parte de la evaluación de la cobertura de código.
+
+![12.png](assets/12.png)
+
+Entonces, para evitar que estas clases irrelevantes afecten a la cobertura del código, podemos excluirlas
+utilizando el plugin `Jacoco`. Para eso, en el `pom.xml` agregaremos la etiqueta `<configuration>` y dentro de él, 
+en una etiqueta `<exclude>` la clase compilada en `bytecode`.
+
+````xml
+
+<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.12</version>
+    <configuration>
+        <excludes>
+            <exclude>dev/magadiflo/app/SpringBootTestApplication.class</exclude>
+        </excludes>
+    </configuration>
+    ...
+</plugin>
+````
+
+A continuación procedemos a ejecutar los test con el comando `mvn clean test`, revisamos el reporte y observamos que ya
+no está el paquete `dev.magadiflo.app`. Recordemos que dentro de dicho paquete está la clase que acabamos de excluir.
+
+![13.png](assets/13.png)
